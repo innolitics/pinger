@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "main": "server/index.js",
   "repository": "",
-  "dependencies": {},
+  "dependencies": {
+    "body-parser": "^1.12.0",
+    "express": "^4.12.2",
+    "orm": "^2.1.22",
+    "sqlite3": "^3.0.5"
+  },
   "devDependencies": {
     "grunt": "^0.4.5",
     "grunt-contrib-cssmin": "^0.12.1",
