@@ -4,14 +4,14 @@ var orm = require('orm');
 var _ = require('underscore');
 var Q = require('q');
 var io = require('socket.io');
-
-var app = require('express')();
+var express = require('express');
+var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 
 app.use(bodyParser.json());
 
-
+app.use(express.static(__dirname + '/../client/'));
 io.on('connection', function(socket){
   console.log('a user connected');
 });
