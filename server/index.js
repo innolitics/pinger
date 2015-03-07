@@ -1,4 +1,5 @@
 var express = require('express');
+var http = require('http');
 var bodyParser = require('body-parser');
 var orm = require('orm');
 
@@ -16,7 +17,6 @@ app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
     });
 
     models.test.hasMany("results", {
-      when: Date,
       status: Number,
       time: Number,
     }, {
@@ -27,6 +27,21 @@ app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
     db.sync(function(err) {
       !err && console.log("done");
     });
+
+    setInterval(function(){
+      models.Test.find(function(err, tests) {
+      if (err === null) {
+          _.Each(tests, function(test) {
+            timeStart = Date.now()
+            http.get(test.url, function(res){
+              models.Result.create({'test_id': test.id, 'status': res.status(), 'time': Date.now()-timeStart });
+            });
+          });
+      }
+      else {
+        console.log("Error: failed to load tests");
+      }});
+    }, 5000);
   }
 }));
 
