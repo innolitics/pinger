@@ -1,0 +1,22 @@
+{
+  "name": "pinger",
+  "version": "0.0.0",
+  "homepage": "https://github.com/innolitics/pinger",
+  "authors": [
+    "J. David Giese <jdgiese@innolitics.com>",
+    "Mitch Davis <mdavis@innolitics.com>"
+  ],
+  "description": "Tool that will email us if a production site goes down.",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "~3.3.2",
+    "mithril": "~0.1.30"
+  }
+}
