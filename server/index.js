@@ -1,13 +1,22 @@
-var express = require('express');
 var http = require('http');
 var bodyParser = require('body-parser');
 var orm = require('orm');
 var _ = require('underscore');
 var Q = require('q');
+var io = require('socket.io');
 
-var app = express();
+var app = require('express')();
+var server = require('http').Server(app);
+var io = require('socket.io')(server);
 
 app.use(bodyParser.json());
+
+
+io.on('connection', function(socket){
+  console.log('a user connected');
+});
+
+server.listen(8000);
 
 app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
   define: function (db, models) {
@@ -43,6 +52,7 @@ app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
               when: new Date(),
             }, function(err, result) {
               if (err === null) {
+                io.emit('newResult', {result: result})
                 console.log("saved");
               } else {
                 console.log(err);
@@ -64,7 +74,6 @@ app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
   }
 }));
 
-app.listen(8000);
 
 app.get("/api/tests/", function (req, res) {
    req.models.Test.find(function(err, tests) {
