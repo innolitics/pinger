@@ -3,6 +3,7 @@ var http = require('http');
 var bodyParser = require('body-parser');
 var orm = require('orm');
 var _ = require('underscore');
+var Q = require('q');
 
 var app = express();
 
@@ -26,27 +27,34 @@ app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
       status: {type: "number", required: true},
       time: {type: "number", required: true},
     });
-    models.Result.hasOne("test", models.Test, {required: true});
+    models.Result.hasOne("test", models.Test, {required: true, reverse: 'results'});
 
 
     setInterval(function(){
       models.Test.find(function(err, tests) {
       if (err === null) {
-          _.each(tests, function(test) {
-            timeStart = Date.now();
-            http.get(test.url, function(res) {
-              models.Result.create({
-                test_id: test.id,
-                status: res.status(),
-                time: Date.now() - timeStart,
-              });
-            })
-            .on('error', function(err) {
-              console.log(err);
+        _.each(tests, function(test) {
+          console.log("making request for %s", test.url);
+          var timeStart = Date.now();
+          http.get(test.url, function(res) {
+            models.Result.create({
+              test_id: test.id,
+              status: res.statusCode,
+              time: Date.now() - timeStart,
+              when: new Date(),
+            }, function(err, result) {
+              if (err === null) {
+                console.log("saved");
+              } else {
+                console.log(err);
+              }
             });
+          })
+          .on('error', function(err) {
+            console.log(err);
           });
-      }
-      else {
+        });
+      } else {
         console.log("Error: failed to load tests");
       }});
     }, 5000);
@@ -61,7 +69,21 @@ app.listen(8000);
 app.get("/api/tests/", function (req, res) {
    req.models.Test.find(function(err, tests) {
      if (err === null) {
-       res.json(tests);
+       Q.all(_.map(tests, function(test) {
+         var deferred = Q.defer();
+         test.getResults(function(err, results) {
+           if (err === null) {
+             test.results = results;
+             deferred.resolve();
+           } else {
+             deferred.reject(err);
+           }
+         });
+         return deferred.promise;
+       }))
+       .then(function() {
+         res.json(tests);
+       });
      } else {
        res.status(500).end();
      }
