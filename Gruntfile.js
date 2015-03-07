@@ -13,7 +13,7 @@ module.exports = function(grunt) {
 
   grunt.initConfig({
     config: {
-      staticRoot: 'static',
+      staticRoot: 'client/static',
     },
     pkg: grunt.file.readJSON('package.json'),
 
@@ -36,6 +36,7 @@ module.exports = function(grunt) {
     vendorSrc: [
       './<%= config.staticRoot %>/vendor/underscore/underscore.js',
       './<%= config.staticRoot %>/vendor/mithril/mithril.js',
+      './<%= config.staticRoot %>/vendor/socket.io-client/socket.io.js',
     ],
 
     developmentSrc: [
