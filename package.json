@@ -7,7 +7,8 @@
     "body-parser": "^1.12.0",
     "express": "^4.12.2",
     "orm": "^2.1.22",
-    "sqlite3": "^3.0.5"
+    "sqlite3": "^3.0.5",
+    "underscore": "^1.8.2"
   },
   "devDependencies": {
     "grunt": "^0.4.5",

@@ -2,6 +2,7 @@ var express = require('express');
 var http = require('http');
 var bodyParser = require('body-parser');
 var orm = require('orm');
+var _ = require('underscore');
 
 var app = express();
 
@@ -9,32 +10,39 @@ app.use(bodyParser.json());
 
 app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
   define: function (db, models) {
-    models.test = db.define("test", {
-      url: String,
-      name: String,
-      email: String,
-      active: Boolean,
-    });
-
-    models.test.hasMany("results", {
-      status: Number,
-      time: Number,
+    models.Test = db.define("test", {
+      url: {type: "text", required: true},
+      name: {type: "text", required: true},
+      email: {type: "text", required: true},
+      active: {type: "boolean", required: true},
     }, {
-      autoFetch: true,
-      autoFetchLimit: 100,
+      validations: {
+        email: orm.validators.patterns.email("Must be an email"),
+      }
     });
 
-    db.sync(function(err) {
-      !err && console.log("done");
+    models.Result = db.define("result", {
+      when: {type: "date", required: true},
+      status: {type: "number", required: true},
+      time: {type: "number", required: true},
     });
+    models.Result.hasOne("test", models.Test, {required: true});
+
 
     setInterval(function(){
       models.Test.find(function(err, tests) {
       if (err === null) {
-          _.Each(tests, function(test) {
-            timeStart = Date.now()
-            http.get(test.url, function(res){
-              models.Result.create({'test_id': test.id, 'status': res.status(), 'time': Date.now()-timeStart });
+          _.each(tests, function(test) {
+            timeStart = Date.now();
+            http.get(test.url, function(res) {
+              models.Result.create({
+                test_id: test.id,
+                status: res.status(),
+                time: Date.now() - timeStart,
+              });
+            })
+            .on('error', function(err) {
+              console.log(err);
             });
           });
       }
@@ -42,13 +50,16 @@ app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
         console.log("Error: failed to load tests");
       }});
     }, 5000);
+
+
+    db.sync(function(err) {});
   }
 }));
 
 app.listen(8000);
 
 app.get("/api/tests/", function (req, res) {
-   req.models.test.find(function(err, tests) {
+   req.models.Test.find(function(err, tests) {
      if (err === null) {
        res.json(tests);
      } else {
@@ -59,7 +70,7 @@ app.get("/api/tests/", function (req, res) {
 
 
 app.post("/api/tests/", function (req, res) {
-   req.models.test.create([req.body], function(err, tests) {
+   req.models.Test.create([req.body], function(err, tests) {
      if (err === null) {
        res.status(201).json(tests[0]);
      } else {
