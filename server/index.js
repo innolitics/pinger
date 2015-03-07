@@ -29,8 +29,7 @@ app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
     });
     models.Result.hasOne("test", models.Test, {required: true, reverse: 'results'});
 
-
-    setInterval(function(){
+    var pingUrl = function(){
       models.Test.find(function(err, tests) {
       if (err === null) {
         _.each(tests, function(test) {
@@ -56,8 +55,9 @@ app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
         });
       } else {
         console.log("Error: failed to load tests");
-      }});
-    }, 5000);
+      }});}
+
+    setInterval(pingUrl, 5000);
 
 
     db.sync(function(err) {});
