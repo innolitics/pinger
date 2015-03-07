@@ -1,4 +1,5 @@
 var fs = require('fs');
+var path = require('path');
 
 module.exports = function(grunt) {
 
@@ -7,6 +8,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-cssmin');
+  grunt.loadNpmTasks('grunt-express');
   grunt.loadNpmTasks('grunt-karma');
 
   grunt.initConfig({
@@ -132,9 +134,17 @@ module.exports = function(grunt) {
         options: {
           spawn: true,
         }
-      }
+      },
     },
 
+    express: {
+      livereloadServer: {
+        server: path.resolve(__dirname, 'server'),
+        bases: path.resolve(__dirname, 'static'),
+        livereload: true,
+        serverreload: true
+      }
+    },
 
   });
 
