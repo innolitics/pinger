@@ -1,3 +1,5 @@
+var socket = io();
+
 var pinger = {};
 
 pinger.getTests = function() {
@@ -7,7 +9,27 @@ pinger.getTests = function() {
 pinger.vm = (function() {
     vm = {};
     vm.init = function() {
-        vm.tests =  pinger.getTests();
+        pinger.getTests()
+            .then(function(data){
+                vm.tests = data;
+                vm.listen = (function () {
+                    m.startComputation();
+                    socket.on('newResult', function (data) {
+                        try {
+                            testIndex = _.map(vm.tests, function(test){
+                                return test.id;
+                            }).indexOf(data.result.test_id);
+                            vm.tests[testIndex].results.push(data.result);
+                        } catch (e) {
+                            alert('There is a problem:', e);
+                        } finally {
+                            m.endComputation();
+                        }
+                    });
+                }) ();
+            });
+
+
     };
     return vm;
 }());
@@ -17,10 +39,14 @@ pinger.controller = function() {
 };
 
 pinger.view = function() {
-    return m("div", [
+    return m("div.container", [
       m('h1', 'Pinger'),
-      m('ul', _.map(pinger.vm.tests(), function(test) {
-        return m('li', test.name);
+      m('table.table', _.map(pinger.vm.tests, function(test) {
+        return [m('table-head', test.url),
+            m('td', _.map(test.results, function(result){
+                return m('tr', result.when);
+            }))
+        ];
       }))
     ]);
 };
