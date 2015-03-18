@@ -73,6 +73,23 @@ app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
     db.sync(function(err) {});
   }
 }));
+app.get("/api/tests/:testId/results/", function(req, res) {
+  var testId = parseInt(req.params['testId']);
+  req.models.Test.get(testId, function(err, test){
+     if (err === null){
+       test.getResults(function(err, results) {
+         if (err === null) {
+           res.json(results);
+         } else {
+           res.status(500).end();
+         }
+       });
+     } else {
+       res.status(404).end();
+     }
+
+  });
+});
 
 
 app.get("/api/tests/", function (req, res) {
@@ -98,7 +115,6 @@ app.get("/api/tests/", function (req, res) {
      }
    });
 });
-
 
 app.post("/api/tests/", function (req, res) {
    req.models.Test.create([req.body], function(err, tests) {
