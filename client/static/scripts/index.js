@@ -8,42 +8,37 @@ pinger.getTests = function() {
 
 pinger.vm = (function() {
     vm = {};
+
     vm.init = function() {
         pinger.getTests()
-            .then(function(tests){
-                vm.tests = _.map(tests, function(test){
-                    test.isUp = _.map(test.results, function(result){
-                        return result.status === 200;
-                    });
-                    test.pingTimes = _.map(test.results, function(result){
-                        return result.time;
-                    });
-                    return test;
-                });
-                vm.listen = (function () {
-                    m.startComputation();
-                    socket.on('newResult', function (data) {
-                        try {
-                            vm.addResult(data.result);
-                        } catch (e) {
-                            alert('There is a problem:', e);
-                        } finally {
-                            m.endComputation();
-                        }
-                    });
-                }) ();
+        .then(function(tests){
+            vm.tests = _.map(tests, function(test){
+                test.status = _.pluck(test.results, 'status');
+                test.pingTimes = _.pluck(test.results, 'time');
+                return test;
             });
 
-        vm.addResult = function(result){
-            testIndex = _.map(vm.tests, function(test){
-                return test.id;
-            }).indexOf(result.test_id);
-            vm.tests[testIndex].results.push(result);
-            vm.tests[testIndex].pingTimes.push(result.time);
-            vm.tests[testIndex].isUp.push(result.status === 200);
-        };
-
+            socket.on('newResult', function (data) {
+                m.startComputation();
+                try {
+                    vm.addResult(data.result);
+                } catch (e) {
+                    alert('There is a problem:', e);
+                } finally {
+                    m.endComputation();
+                }
+            });
+        });
     };
+
+    vm.addResult = function(result) {
+        testIndex = _.pluck(vm.tests, 'id').indexOf(result.test_id);
+        vm.tests[testIndex].results.push(result);
+        vm.tests[testIndex].pingTimes.push(result.time);
+        vm.tests[testIndex].status.push(result.status);
+    };
+
+
     return vm;
 }());
 
