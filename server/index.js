@@ -9,6 +9,9 @@ var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 
+var email = require('./email');
+
+
 app.use(bodyParser.json());
 
 app.use(express.static(__dirname + '/../client/'));
@@ -52,7 +55,10 @@ app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
               when: new Date(),
             }, function(err, result) {
               if (err === null) {
-                io.emit('newResult', {result: result})
+                if (result.status >= 500) {
+                  email.errorEmail(test.url, result);
+                }
+                io.emit('newResult', {result: result});
                 console.log("saved");
               } else {
                 console.log(err);
