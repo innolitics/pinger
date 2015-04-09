@@ -82,6 +82,7 @@ pinger.view = function() {
         m('thead', 
           m('tr', [
             m('th', 'URL'),
+            m('th', 'Email'),
             m('th', 'Status'),
             m('th', 'Time (ms)')
           ])
@@ -92,6 +93,7 @@ pinger.view = function() {
           var latestStatus = _.last(test.status);
           return m('tr', [
               m('td', test.url),
+              m('td', test.email),
               m('td', latestStatus),
               m('td', latestPingTime),
           ]);
