@@ -9,21 +9,41 @@ pinger.getTests = function() {
 pinger.vm = (function() {
     vm = {};
 
+    vm.newTest = {
+      url: m.prop(''),
+      name: m.prop(''),
+      email: m.prop(''),
+    };
+
+    
+    vm.createNewTest = function() {
+      m.request({method: 'POST', url: '/api/tests/', data: {
+        url: vm.newTest.url(),
+        name: vm.newTest.name(),
+        email: vm.newTest.email(),
+      }})
+      .then(function(response) {
+        console.log(response);
+        vm.addTest(response);
+        vm.newTest.url('');
+        vm.newTest.name('');
+        vm.newTest.email('');
+      });
+    };
+
+
     vm.init = function() {
+
         pinger.getTests()
         .then(function(tests){
-            vm.tests = _.map(tests, function(test){
-                test.status = _.pluck(test.results, 'status');
-                test.pingTimes = _.pluck(test.results, 'time');
-                return test;
-            });
+            vm.tests = _.map(tests, vm.addTest);
 
             socket.on('newResult', function (data) {
                 m.startComputation();
                 try {
                     vm.addResult(data.result);
                 } catch (e) {
-                    alert('There is a problem:', e);
+                    console.log('There is a problem:', e);
                 } finally {
                     m.endComputation();
                 }
@@ -37,6 +57,11 @@ pinger.vm = (function() {
         vm.tests[testIndex].status.push(result.status);
     };
 
+    vm.addTest = function(test){
+        test.status = _.pluck(test.results, 'status');
+        test.pingTimes = _.pluck(test.results, 'time');
+        return test;
+    };
 
     return vm;
 }());
@@ -46,9 +71,14 @@ pinger.controller = function() {
 };
 
 pinger.view = function() {
-    var expanded_test = 3;
     return m("#pinger-app", [
       m('h1', 'Pinger'),
+      m('form.form-inline', [
+        m('input.form-control[placeholder=url][required][type=url]', {oninput: m.withAttr('value', vm.newTest.url), value: vm.newTest.url()}),
+        m('input.form-control[placeholder=name][required]', {oninput: m.withAttr('value', vm.newTest.name), value: vm.newTest.name()}),
+        m('input.form-control[placeholder=email][required][type=email]', {oninput: m.withAttr('value', vm.newTest.email), value: vm.newTest.email()}),
+        m('button.btn', {onclick: vm.createNewTest}, 'Add Test'),
+      ]),
       m('table.table', [
         m('thead', 
           m('tr', [

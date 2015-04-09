@@ -1,4 +1,7 @@
 var http = require('http');
+var https = require('https');
+require('ssl-root-cas/latest').inject();
+
 var bodyParser = require('body-parser');
 var orm = require('orm');
 var _ = require('underscore');
@@ -44,10 +47,26 @@ app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
     var pingUrl = function(){
       models.Test.find(function(err, tests) {
       if (err === null) {
+
+        // TODO: filter out inactive tests
         _.each(tests, function(test) {
           console.log("making request for %s", test.url);
           var timeStart = Date.now();
-          http.get(test.url, function(res) {
+
+          var protocol;
+          if (test.url.slice(0, 5).toLowerCase() === "https") {
+            protocol = https;
+          } else if (test.url.slice(0, 4).toLowerCase() === "http") {
+            protocol = http;
+          } else {
+            return;
+          }
+
+          // TODO: email us if there are any errors that occur
+          // TODO: if an email has already been sent, don't send another email
+          // for a period of time (to avoid annoyance, and to avoid using up
+          // our mandrill quota)
+          protocol.get(test.url, function(res) {
             models.Result.create({
               test_id: test.id,
               status: res.statusCode,
@@ -68,6 +87,7 @@ app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
           .on('error', function(err) {
             console.log(err);
           });
+
         });
       } else {
         console.log("Error: failed to load tests");
@@ -79,6 +99,8 @@ app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
     db.sync(function(err) {});
   }
 }));
+
+
 app.get("/api/tests/:testId/results/", function(req, res) {
   var testId = parseInt(req.params['testId']);
   req.models.Test.get(testId, function(err, test){
@@ -121,6 +143,7 @@ app.get("/api/tests/", function (req, res) {
      }
    });
 });
+
 
 app.post("/api/tests/", function (req, res) {
    req.models.Test.create([req.body], function(err, tests) {
