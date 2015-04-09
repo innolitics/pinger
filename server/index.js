@@ -1,7 +1,3 @@
-var http = require('http');
-var https = require('https');
-require('ssl-root-cas/latest').inject();
-
 var bodyParser = require('body-parser');
 var orm = require('orm');
 var _ = require('underscore');
@@ -12,7 +8,8 @@ var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 
-var email = require('./email');
+var definitions = require('./definitions');
+var pinger = require('./pinger');
 
 
 app.use(bodyParser.json());
@@ -25,79 +22,17 @@ io.on('connection', function(socket){
 server.listen(8000);
 
 app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
-  define: function (db, models) {
-    models.Test = db.define("test", {
-      url: {type: "text", required: true},
-      name: {type: "text", required: true},
-      email: {type: "text", required: true},
-      active: {type: "boolean", required: true},
-    }, {
-      validations: {
-        email: orm.validators.patterns.email("Must be an email"),
-      }
-    });
+  define: function(db, models, next) {
 
-    models.Result = db.define("result", {
-      when: {type: "date", required: true},
-      status: {type: "number", required: true},
-      time: {type: "number", required: true},
-    });
-    models.Result.hasOne("test", models.Test, {required: true, reverse: 'results'});
+    definitions.defineModels(db, models);
 
-    var pingUrl = function(){
-      models.Test.find(function(err, tests) {
-      if (err === null) {
+    // ping all the sites every second
+    setInterval(function() {
+      pinger.ping(models, io);
+    }, 5000);
 
-        var activeTests = _.filter(tests, function(t) { return t.active; });
-        _.each(activeTests, function(test) {
-          console.log("making request for %s", test.url);
-          var timeStart = Date.now();
-
-          var protocol;
-          if (test.url.slice(0, 5).toLowerCase() === "https") {
-            protocol = https;
-          } else if (test.url.slice(0, 4).toLowerCase() === "http") {
-            protocol = http;
-          } else {
-            return;
-          }
-
-          // TODO: email us if there are any errors that occur
-          // TODO: if an email has already been sent, don't send another email
-          // for a period of time (to avoid annoyance, and to avoid using up
-          // our mandrill quota)
-          protocol.get(test.url, function(res) {
-            models.Result.create({
-              test_id: test.id,
-              status: res.statusCode,
-              time: Date.now() - timeStart,
-              when: new Date(),
-            }, function(err, result) {
-              if (err === null) {
-                if (result.status >= 500) {
-                  email.errorEmail(test.url, result);
-                }
-                io.emit('newResult', {result: result});
-                console.log("saved");
-              } else {
-                console.log(err);
-              }
-            });
-          })
-          .on('error', function(err) {
-            console.log(err);
-          });
-
-        });
-      } else {
-        console.log("Error: failed to load tests");
-      }});}
-
-    setInterval(pingUrl, 5000);
-
-
-    db.sync(function(err) {});
-  }
+    next();
+  },
 }));
 
 
