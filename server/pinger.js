@@ -6,6 +6,13 @@ var _ = require('underscore');
 
 var email = require('./email');
 
+
+// keep track of when the last time we sent an email for a given test
+var lastEmailSentCache = {};
+
+var delayBetweenEmailsMS = 1000*60*30;
+
+
 exports.ping = function(models, io) {
   models.Test.find(function(err, tests) {
     if (err !== null) {
@@ -28,9 +35,6 @@ exports.ping = function(models, io) {
         }
 
         // TODO: email us if there are any errors that occur
-        // TODO: if an email has already been sent, don't send another email
-        // for a period of time (to avoid annoyance, and to avoid using up
-        // our mandrill quota)
         protocol.get(test.url, function(res) {
           models.Result.create({
             test_id: test.id,
@@ -40,7 +44,18 @@ exports.ping = function(models, io) {
           }, function(err, result) {
             if (err === null) {
               if (result.status >= 500) {
-                email.errorEmail(test.url, result);
+                var lastEmailSentOn = lastEmailSentCache[test.id];
+                var longEnoughDelayBetweenEmails = true;
+
+                if (lastEmailSentOn !== undefined) {
+                  longEnoughDelayBetweenEmails = (new Date() - lastEmailSentOn) > delayBetweenEmailsMS;
+                }
+
+                if (longEnoughDelayBetweenEmails) {
+                  email.errorEmail(test.url, result);
+                }
+
+                lastEmailSentCache[test.id] = new Date();
               }
               io.emit('newResult', {result: result});
               console.log("saved");
