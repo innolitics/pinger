@@ -4,7 +4,6 @@ exports.defineModels = function defineModels(db, models) {
 
     models.Test = db.define("test", {
       url: {type: "text", required: true},
-      name: {type: "text", required: true},
       email: {type: "text", required: true},
       active: {type: "boolean", required: true},
     }, {
@@ -20,4 +19,6 @@ exports.defineModels = function defineModels(db, models) {
     });
     models.Result.hasOne("test", models.Test, {required: true, reverse: 'results'});
 
+
+    db.sync();
 };

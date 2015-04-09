@@ -11,7 +11,6 @@ pinger.vm = (function() {
 
     vm.newTest = {
       url: m.prop(''),
-      name: m.prop(''),
       email: m.prop(''),
     };
 
@@ -19,14 +18,12 @@ pinger.vm = (function() {
     vm.createNewTest = function() {
       m.request({method: 'POST', url: '/api/tests/', data: {
         url: vm.newTest.url(),
-        name: vm.newTest.name(),
         email: vm.newTest.email(),
         active: true,
       }})
       .then(function(test) {
         vm.tests.push(vm.parseTest(test));
         vm.newTest.url('');
-        vm.newTest.name('');
         vm.newTest.email('');
       });
     };
@@ -83,9 +80,8 @@ pinger.view = function() {
     return m("#pinger-app.container", [
       m('h1', 'Pinger'),
       m('br'),
-      m('form', split4([
+      m('form', split3([
         m('input.form-control[placeholder=url][required][type=url]', {oninput: m.withAttr('value', vm.newTest.url), value: vm.newTest.url()}),
-        m('input.form-control[placeholder=name][required]', {oninput: m.withAttr('value', vm.newTest.name), value: vm.newTest.name()}),
         m('input.form-control[placeholder=email][required][type=email]', {oninput: m.withAttr('value', vm.newTest.email), value: vm.newTest.email()}),
         m('button.btn.btn-block[type=button]', {onclick: vm.createNewTest}, 'Add Test'),
       ])),
@@ -128,9 +124,9 @@ m.route(document.body, "/", {
 });
 
 
-function split4(nodes) {
+function split3(nodes) {
   return m('.row', _.map(nodes, function(n) {
-    return m('.col-xs-12.col-sm-6.col-md-3', [n]);
+    return m('.col-xs-12.col-sm-4', [n]);
   }));
 }
 
