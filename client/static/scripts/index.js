@@ -21,12 +21,21 @@ pinger.vm = (function() {
         url: vm.newTest.url(),
         name: vm.newTest.name(),
         email: vm.newTest.email(),
+        active: true,
       }})
       .then(function(test) {
         vm.tests.push(vm.parseTest(test));
         vm.newTest.url('');
         vm.newTest.name('');
         vm.newTest.email('');
+      });
+    };
+
+
+    vm.toggleTest = function(test) {
+      m.request({method: 'PUT', url: '/api/tests/' + test.id + '/toggle/'})
+      .then(function() {
+        test.active = !test.active;
       });
     };
 
@@ -57,6 +66,7 @@ pinger.vm = (function() {
     };
 
     vm.parseTest = function(test){
+      console.log(test);
         test.status = _.pluck(test.results, 'status');
         test.pingTimes = _.pluck(test.results, 'time');
         return test;
@@ -84,7 +94,8 @@ pinger.view = function() {
             m('th', 'URL'),
             m('th', 'Email'),
             m('th', 'Status'),
-            m('th', 'Time (ms)')
+            m('th', 'Time (ms)'),
+            m('th', 'Toggle'),
           ])
         ),
         m('tbody', 
@@ -96,6 +107,12 @@ pinger.view = function() {
               m('td', test.email),
               m('td', latestStatus),
               m('td', latestPingTime),
+              m('td', [
+                m('button.btn', {
+                  'onclick': function() { vm.toggleTest(test); },
+                  'class': test.active ? 'btn-default' : 'btn-primary',
+                }, test.active ? 'Disable' : 'Enable')
+              ])
           ]);
         }))
       ])

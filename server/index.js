@@ -48,8 +48,8 @@ app.use(orm.express({host: "./pinger.db", protocol: "sqlite"}, {
       models.Test.find(function(err, tests) {
       if (err === null) {
 
-        // TODO: filter out inactive tests
-        _.each(tests, function(test) {
+        var activeTests = _.filter(tests, function(t) { return t.active; });
+        _.each(activeTests, function(test) {
           console.log("making request for %s", test.url);
           var timeStart = Date.now();
 
@@ -146,6 +146,7 @@ app.get("/api/tests/", function (req, res) {
 
 
 app.post("/api/tests/", function (req, res) {
+  // TODO: inform people over the socket that a test was added
    req.models.Test.create([req.body], function(err, tests) {
      if (err === null) {
        res.status(201).json(tests[0]);
@@ -154,3 +155,24 @@ app.post("/api/tests/", function (req, res) {
      }
    });
 });
+
+
+app.put("/api/tests/:testId/toggle/", function (req, res) {
+  // TODO: inform people over the socket that a test was changed
+  var testId = parseInt(req.params['testId']);
+   req.models.Test.get(testId, function(err, test) {
+     if (err === null) {
+       test.active = !test.active;
+       test.save(function(err) {
+         if (err === null) {
+           res.status(200).end();
+         } else {
+           res.status(500).end();
+         }
+       })
+     } else {
+       res.status(404).end();
+     }
+   });
+});
+
