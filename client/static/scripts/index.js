@@ -80,14 +80,16 @@ pinger.controller = function() {
 };
 
 pinger.view = function() {
-    return m("#pinger-app", [
+    return m("#pinger-app.container", [
       m('h1', 'Pinger'),
-      m('form.form-inline', [
+      m('br'),
+      m('form', split4([
         m('input.form-control[placeholder=url][required][type=url]', {oninput: m.withAttr('value', vm.newTest.url), value: vm.newTest.url()}),
         m('input.form-control[placeholder=name][required]', {oninput: m.withAttr('value', vm.newTest.name), value: vm.newTest.name()}),
         m('input.form-control[placeholder=email][required][type=email]', {oninput: m.withAttr('value', vm.newTest.email), value: vm.newTest.email()}),
-        m('button.btn[type=button]', {onclick: vm.createNewTest}, 'Add Test'),
-      ]),
+        m('button.btn.btn-block[type=button]', {onclick: vm.createNewTest}, 'Add Test'),
+      ])),
+      m('br'),
       m('table.table', [
         m('thead', 
           m('tr', [
@@ -124,3 +126,11 @@ pinger.view = function() {
 m.route(document.body, "/", {
   "/": {controller: pinger.controller, view: pinger.view}
 });
+
+
+function split4(nodes) {
+  return m('.row', _.map(nodes, function(n) {
+    return m('.col-xs-12.col-sm-6.col-md-3', [n]);
+  }));
+}
+
