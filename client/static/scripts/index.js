@@ -22,9 +22,8 @@ pinger.vm = (function() {
         name: vm.newTest.name(),
         email: vm.newTest.email(),
       }})
-      .then(function(response) {
-        console.log(response);
-        vm.addTest(response);
+      .then(function(test) {
+        vm.tests.push(vm.parseTest(test));
         vm.newTest.url('');
         vm.newTest.name('');
         vm.newTest.email('');
@@ -36,7 +35,7 @@ pinger.vm = (function() {
 
         pinger.getTests()
         .then(function(tests){
-            vm.tests = _.map(tests, vm.addTest);
+            vm.tests = _.map(tests, vm.parseTest);
 
             socket.on('newResult', function (data) {
                 m.startComputation();
@@ -57,7 +56,7 @@ pinger.vm = (function() {
         vm.tests[testIndex].status.push(result.status);
     };
 
-    vm.addTest = function(test){
+    vm.parseTest = function(test){
         test.status = _.pluck(test.results, 'status');
         test.pingTimes = _.pluck(test.results, 'time');
         return test;
@@ -77,7 +76,7 @@ pinger.view = function() {
         m('input.form-control[placeholder=url][required][type=url]', {oninput: m.withAttr('value', vm.newTest.url), value: vm.newTest.url()}),
         m('input.form-control[placeholder=name][required]', {oninput: m.withAttr('value', vm.newTest.name), value: vm.newTest.name()}),
         m('input.form-control[placeholder=email][required][type=email]', {oninput: m.withAttr('value', vm.newTest.email), value: vm.newTest.email()}),
-        m('button.btn', {onclick: vm.createNewTest}, 'Add Test'),
+        m('button.btn[type=button]', {onclick: vm.createNewTest}, 'Add Test'),
       ]),
       m('table.table', [
         m('thead', 
